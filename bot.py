@@ -1,51 +1,35 @@
-import os
-import time
 import logging
+import yaml
 from telegram import Update
-from telegram.ext import (
-    ApplicationBuilder,
-    CommandHandler,
-    ContextTypes,
-)
+from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler
 
-# ================== الإعدادات ==================
-BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
-
+# إعداد السجلات (Logs) لمعرفة ما يحدث في البوت
 logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s | %(levelname)s | %(message)s",
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    level=logging.INFO
 )
 
-logger = logging.getLogger(__name__)
+# دالة لتحميل التوكن من ملف yaml
+def load_config():
+    with open("config.yaml", "r") as f:
+        return yaml.safe_load(f)
 
-# ================== أوامر البوت ==================
+# أمر البداية /start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(
-        "🤖 البوت التجريبي يعمل بنجاح!\n\n"
-        "هذا بوت اختبار بدون GitHub Token ✅"
+    await context.bot.send_message(
+        chat_id=update.effective_chat.id, 
+        text="أهلاً بك! أنا بوت تجريبي مرفوع من GitHub."
     )
 
-async def ping(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("🏓 Pong! البوت شغال 100%")
-
-# ================== التشغيل ==================
-if __name__ == "__main__":
-    if not BOT_TOKEN:
-        logger.error("❌ لم يتم العثور على TELEGRAM_BOT_TOKEN في Secrets")
-        exit(1)
-
-    logger.info("✅ تم العثور على توكن تلجرام")
-    logger.info("🚀 بدء تشغيل البوت التجريبي...")
-
-    app = ApplicationBuilder().token(BOT_TOKEN).build()
-
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("ping", ping))
-
-    # إبقاء العملية حية (مهم لـ GitHub Actions)
-    def keep_alive():
-        while True:
-            time.sleep(60)
-
-    logger.info("🤖 البوت يعمل الآن...")
-    app.run_polling() 
+if __name__ == '__main__':
+    config = load_config()
+    TOKEN = config['bot_token']
+    
+    application = ApplicationBuilder().token(TOKEN).build()
+    
+    start_handler = CommandHandler('start', start)
+    application.add_handler(start_handler)
+    
+    print("البوت يعمل الآن...")
+    application.run_polling()
+ 
